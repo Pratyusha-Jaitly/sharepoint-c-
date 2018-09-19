@@ -85,6 +85,32 @@ namespace firstConsoleApplication1
             Console.WriteLine("List Created");
              
         }
+        static void ShowWebTemplates()
+        {
+            ClientContext context = GetClientContext();
+            var webTemplates = context.Site.GetWebTemplates(1033, 15);
+            context.Load(webTemplates);
+            context.ExecuteQuery();
+            foreach( var item in webTemplates)
+            {
+                Console.WriteLine(item.Title + " " + item.Name);
+            }
+        }
+        static void CreateSite()
+        {
+            ClientContext context = GetClientContext();
+
+            WebCreationInformation creation = new WebCreationInformation();
+            creation.Url = "pratSite";
+            creation.Title = "Welcome To pratSite";
+            Web newWeb = context.Web.Webs.Add(creation);
+
+            // Retrieve the new web information. 
+            context.Load(newWeb, w => w.Title);
+            context.ExecuteQuery();
+
+            Console.WriteLine("Page created");
+        }
         static void AddListItem()
         {
             ClientContext context = GetClientContext();
@@ -132,13 +158,29 @@ namespace firstConsoleApplication1
 
             }
         }
+        static void ShowSites()
+        {
+            ClientContext context = GetClientContext();
+            Web site = context.Site.RootWeb;
+            context.Load(site);
+            context.ExecuteQuery();
+
+            Console.WriteLine("Site Title : " + site.Title);
+            Console.WriteLine("Site Url : + "+ site.Url);
+              
+        }
+        
         static void Main(string[] args)
         {
 
             // ShowLists();
             //ShowListItem();
             // CreateList();
-            AddListItem();
+            //AddListItem();
+            //CreateSite();
+            //GetSiteUrl();
+            //ShowSites();
+            ShowWebTemplates();
             
         }
     }
