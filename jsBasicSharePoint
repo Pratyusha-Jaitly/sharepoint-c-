@@ -1,0 +1,194 @@
+'use strict';
+
+ExecuteOrDelayUntilScriptLoaded(initializePage, "sp.js");
+
+function initializePage()
+{
+    var context = SP.ClientContext.get_current();
+    
+    var user = context.get_web().get_currentUser();
+    var web = context.get_web(); // gives the web object
+    var lists = context.get_web().get_lists();
+    var list = lists.getByTitle("Composed Looks");
+    var listItems;
+
+    //Host context
+    var hostContext = new SP.AppContextSite
+        (context, GetHostURL());
+    var hostWeb = hostContext.get_web();
+
+    var hostlists = hostContext.get_web().get_lists();
+    var hostListItems;
+
+
+    // This code runs when the DOM 
+    //is ready and creates a context object 
+    //which is needed to use the SharePoint object model
+    $(document).ready(function () {
+        $('#showUserName').click (getUserName);
+        $('#ShowWebTitle').click(ShowWebTitle);
+        $('#ShowLists').click(ShowLists);
+        $('#ShowListItems').click(ShowListItems);
+        $('#ShowHostLists').click(ShowHostLists);
+        $('#CreateList').click(CreateList);
+        
+        $('#AddListItem').click(AddListItem);
+    });
+
+    function AddListItem() {
+    
+        var value = $('#txtListItemValue').val();
+        
+        var listItemInfo = new SP.ListItemCreationInformation();
+       
+        var list = lists.getByTitle($("#txtListName").val());
+        
+        var listItem = list.addItem(listItemInfo); //Blank row
+        listItem.set_item("Title", value);
+     
+        listItem.update();
+        context.executeQueryAsync(AddListItemSuccess, onGetUserNameFail);
+
+    }
+
+    function AddListItemSuccess()
+    {
+        $('#AddListItemMsg').text("Item added");
+    }
+
+  
+
+    function CreateList() {
+        var listCreationInfo = new SP.ListCreationInformation();
+        listCreationInfo.set_title($('#txtListName').val());
+        listCreationInfo.set_templateType
+            (SP.ListTemplateType.genericList);
+        listCreationInfo.set_quickLaunchOption
+            (SP.QuickLaunchOptions.defaultValue);
+       var list =  lists.add(listCreationInfo);
+       list.get_fields().addFieldAsXml
+           ("<Field DisplayName='EmpName' Type='Text'/>");
+        list.update();
+        context.executeQueryAsync
+            (CreateListSuccess, onGetUserNameFail);
+    }
+
+    function CreateListSuccess() {
+        $("#CreateListMsg").text("List Created");
+
+    }
+
+    function ShowHostLists() {
+        alert(GetHostURL());
+        context.load(hostlists);
+        context.executeQueryAsync
+            (ShowHostListsSuccess, onGetUserNameFail);
+
+    }
+
+    function ShowHostListsSuccess() {
+        var listenum = hostlists.getEnumerator();
+      
+        var data = "<ul>";
+        while (listenum.moveNext()) {
+            data += "<li>" + listenum.get_current().get_title()
+                + "</li>";
+        }
+        data += "</ul>";
+        $('#Lists').html(data);
+    }
+
+    function GetHostURL() {
+      
+        var hostUrl = '';
+        //var link = document.createElement('link');
+        //link.setAttribute('rel', 'stylesheet');
+        if (document.URL.indexOf('?') != -1) {
+            var params = document.URL.split('?')[1].split('&');
+            for (var i = 0; i < params.length; i++) {
+                var p = decodeURIComponent(params[i]);
+                if (/^SPHostUrl=/i.test(p)) {
+                    hostUrl = p.split('=')[1];
+                    //link.setAttribute('href', hostUrl + 
+                    //'/_layouts/15/defaultcss.ashx');
+                    break;
+                }
+            }
+        }
+        return hostUrl;
+    }
+    function ShowListItems() {
+        var camlQuery = new SP.CamlQuery();
+        listItems = list.getItems(camlQuery);
+        context.load(listItems);
+        context.executeQueryAsync
+            (ShowListItemsSuccess, onGetUserNameFail);
+    }
+
+    function ShowListItemsSuccess() {
+      //var particularList = lists.getByTitle("Composed Looks");
+        var listItemEnum = listItems.getEnumerator();
+        var itemData = "<ul>";
+        while (listItemEnum.moveNext()) {
+            itemData += "<li>" +
+                listItemEnum.get_current().get_item("Title") +
+                "</li>";
+        }
+        itemData += "</ul>";
+        //console.log("this should run");
+        //console.log(particularList.get_fields());
+        $('#ListItems').html(itemData);
+    }
+    // This function prepares, loads, 
+    //and then executes a SharePoint query to get the
+    //current users information
+    function ShowWebTitle() {
+        context.load(web);
+        context.executeQueryAsync(ShowWebTitleSuccess, onGetUserNameFail);
+    }
+    function ShowWebTitleSuccess() {
+        $("#WebTitle").append(web.get_title());
+    }
+
+    function getUserName() {
+        context.load(user);
+        //$("ShowUserName").click(function () {
+        //    // action goes here!!
+        //    $('#message').text('Hello ' + user.get_title());
+        //});
+        context.executeQueryAsync(onGetUserNameSuccess, onGetUserNameFail);
+
+    }
+    function ShowLists()
+    {
+        context.load(lists);
+        context.executeQueryAsync
+            (ShowListsSuccess, onGetUserNameFail);
+    }
+
+    function ShowListsSuccess() {
+        var listenum = lists.getEnumerator();
+        console.log("Does this work");
+        var data = "<ul>";
+        while (listenum.moveNext()) {
+            data += "<li>" +
+                listenum.get_current().get_title() +
+                "</li>";
+        }
+        data += "</ul>";
+        $('#Lists').html(data);
+    }
+    // This function is executed if the above call is successful
+    // It replaces the contents of the 'message' element
+    //with the user name
+    function onGetUserNameSuccess() {
+        $('#message').text('Hello ' + user.get_title());
+    }
+   
+
+    // This function is executed if the above call fails
+    function onGetUserNameFail(sender, args) {
+        alert('Failed to get user name. Error:' + 
+            args.get_message());
+    }
+}
