@@ -1,0 +1,99 @@
+'use strict';
+
+ExecuteOrDelayUntilScriptLoaded(initializePage, "sp.js");
+
+function initializePage()
+{
+    //var context = SP.ClientContext.get_current();
+    //var user = context.get_web().get_currentUser();
+
+    // This code runs when the DOM is ready and creates a context object which is needed to use the SharePoint object model
+    $(document).ready(function () {
+        $('#ShowWebTitle').click(ShowWebTitle);
+        $('#ShowLists').click(ShowLists);
+        $('#ShowListItems').click(ShowListItems);
+
+    });
+
+    function ShowLists() {
+        var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/Web/Lists";
+
+        $.ajax({
+            type: "GET",//HTTP Verb for Communication
+            url: requestUri,//Identifier
+            contentType: "application/json",//Data Format
+            headers: { Accept: "application/json;odata=verbose" },//Metadata Format
+            success: ShowListsSuccess,
+            error: onFail
+        });
+    }
+    function ShowListItems() {
+        var requestUri = _spPageContextInfo.webAbsoluteUrl
+            + "/_api/Web/Lists/GetByTitle('Composed Looks')/Items/";
+
+        $.ajax({
+            type: "GET",//HTTP Verb for Communication
+            url: requestUri,//Identifier
+            contentType: "application/json",//Data Format
+            headers: { Accept: "application/json;odata=verbose" },//Metadata Format
+            success: ShowListsItemsSuccess,
+            error: onFail
+        });
+    }
+    function ShowListsSuccess(data) {
+        var results = data.d.results;
+        var listNames = "";
+        for (var i = 0; i < results.length; i++)
+        {
+            listNames += results[i]["Title"];
+        }
+        alert(listNames);
+    }
+
+    function ShowListsItemsSuccess(data) {
+        var results = data.d.results;
+        var listItems = "";
+        for (var i = 0; i < results.length; i++) {
+            listItems += results[i]["Title"];
+        }
+        alert(listItems);
+    }
+
+    // This function prepares, loads, and then executes a SharePoint query to get the current users information
+    //function getUserName() {
+    //    context.load(user);
+    //    context.executeQueryAsync(onGetUserNameSuccess, onGetUserNameFail);
+    //}
+    function ShowWebTitle() {
+        var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/Web/";
+
+        $.ajax({
+            type: "GET",//HTTP Verb for Communication
+            url: requestUri,//Identifier
+            contentType: "application/json",//Data Format
+            headers: { Accept: "application/json;odata=verbose" },//Metadata Format
+            success: ShowWebTitleSuccess,
+            error: onFail
+        });
+
+    }
+    function onFail(sender, args) {
+        alert('Failed to get user name. Error:' + args.get_message());
+    }
+
+    function ShowWebTitleSuccess(data) {
+        alert(data.d.Title);
+    }
+
+
+    // This function is executed if the above call is successful
+    // It replaces the contents of the 'message' element with the user name
+    //function onGetUserNameSuccess() {
+    //    $('#message').text('Hello ' + user.get_title());
+    //}
+
+    // This function is executed if the above call fails
+    function onGetUserNameFail(sender, args) {
+        alert('Failed to get user name. Error:' + args.get_message());
+    }
+}
